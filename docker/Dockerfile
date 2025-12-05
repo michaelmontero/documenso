@@ -71,6 +71,7 @@ COPY --from=builder /app/out/package-lock.json ./package-lock.json
 
 COPY --from=builder /app/lingui.config.ts ./lingui.config.ts
 COPY --from=builder /app/patches ./patches
+COPY apps/certs ./certs
 
 RUN npm ci
 
@@ -111,6 +112,8 @@ COPY --from=builder --chown=nodejs:nodejs /app/out/json/ .
 COPY --from=builder --chown=nodejs:nodejs /app/out/full/packages/tailwind-config ./packages/tailwind-config
 # Copy the patches across
 COPY --from=builder --chown=nodejs:nodejs /app/patches ./patches
+# Copy the cert
+COPY --from=builder --chown=nodejs:nodejs /app/apps/certs ./certs
 
 RUN npm ci --only=production
 
