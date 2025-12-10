@@ -1,3 +1,4 @@
+import * as fs from 'node:fs';
 import { DateTime } from 'luxon';
 import type { Browser } from 'playwright';
 
@@ -33,7 +34,43 @@ export const getAuditLogsPdf = async ({ documentId, language }: GetAuditLogsPdfO
     // !: Previously we would have to keep the playwright version in sync with the browserless version to avoid errors.
     browser = await chromium.connectOverCDP(browserlessUrl);
   } else {
-    browser = await chromium.launch();
+    // Try to use system Chromium if available (for Docker/Railway deployments)
+    // Check multiple possible locations for Chromium executable
+    let chromiumExecutablePath = env('CHROMIUM_EXECUTABLE_PATH');
+    
+    if (!chromiumExecutablePath) {
+      const possiblePaths = [
+        '/usr/bin/chromium',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/google-chrome',
+        '/usr/bin/google-chrome-stable',
+      ];
+      
+      for (const path of possiblePaths) {
+        if (fs.existsSync(path)) {
+          chromiumExecutablePath = path;
+          break;
+        }
+      }
+    }
+
+    if (!chromiumExecutablePath) {
+      throw new Error(
+        'Chromium executable not found. Please install Chromium or set CHROMIUM_EXECUTABLE_PATH environment variable.',
+      );
+    }
+
+    browser = await chromium.launch({
+      executablePath: chromiumExecutablePath,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-extensions',
+      ],
+    });
   }
 
   if (!browser) {

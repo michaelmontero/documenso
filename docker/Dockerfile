@@ -97,33 +97,37 @@ ENV NEXT_PRIVATE_TELEMETRY_HOST="$NEXT_PRIVATE_TELEMETRY_HOST"
 
 # Instalar Chromium y dependencias para Playwright
 RUN apt-get update && apt-get install -y \
-  chromium-common \
+  chromium \
   chromium-sandbox \
-  chromium-driver \
   libnss3 \
   libxss1 \
   libasound2 \
   libatk1.0-0 \
+  libatk-bridge2.0-0 \
   libcups2 \
   libdbus-1-3 \
+  libdrm2 \
+  libgbm1 \
   libgdk-pixbuf-2.0-0 \
   libgtk-3-0 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxfixes3 \
+  libxkbcommon0 \
+  libxrandr2 \
   fonts-freefont-ttf \
   fontconfig \
   wget \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-ENV PLAYWRIGHT_BROWSERS_PATH=/usr/lib/chromium/
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 # Crear usuario nodejs con home y permisos correctos
 RUN groupadd --gid 1001 nodejs \
     && useradd --uid 1001 --gid 1001 --create-home --home-dir /home/nodejs --shell /bin/bash nodejs \
-    && mkdir -p /home/nodejs /app \
+    && mkdir -p /home/nodejs /app /opt/documenso \
     && chown -R nodejs:nodejs /home/nodejs /app
-
-USER nodejs
 
 WORKDIR /app
 
@@ -133,6 +137,15 @@ COPY --from=builder --chown=nodejs:nodejs /app/patches ./patches
 
 # ⭐ Certs en la imagen final
 COPY --from=builder --chown=nodejs:nodejs /app/apps/certs ./certs
+
+# Copy certificate to expected location if it exists (as root, before switching user)
+RUN if [ -f "./certs/cert.p12" ]; then \
+      cp ./certs/cert.p12 /opt/documenso/cert.p12 && \
+      chmod 644 /opt/documenso/cert.p12 && \
+      chown nodejs:nodejs /opt/documenso/cert.p12; \
+    fi
+
+USER nodejs
 
 # Instalar dependencias sin dev y sin problemas de permisos
 RUN npm ci --only=production
