@@ -127,7 +127,8 @@ ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 RUN groupadd --gid 1001 nodejs \
     && useradd --uid 1001 --gid 1001 --create-home --home-dir /home/nodejs --shell /bin/bash nodejs \
     && mkdir -p /home/nodejs /app /opt/documenso \
-    && chown -R nodejs:nodejs /home/nodejs /app
+    && chown -R nodejs:nodejs /home/nodejs /app \
+    && chown -R nodejs:nodejs /opt/documenso
 
 WORKDIR /app
 
@@ -135,14 +136,24 @@ COPY --from=builder --chown=nodejs:nodejs /app/out/json/ .
 COPY --from=builder --chown=nodejs:nodejs /app/out/full/packages/tailwind-config ./packages/tailwind-config
 COPY --from=builder --chown=nodejs:nodejs /app/patches ./patches
 
-# ⭐ Certs en la imagen final
+# ⭐ Certs en la imagen final - copy from builder stage
 COPY --from=builder --chown=nodejs:nodejs /app/apps/certs ./certs
 
 # Copy certificate to expected location if it exists (as root, before switching user)
-RUN if [ -f "./certs/cert.p12" ]; then \
-      cp ./certs/cert.p12 /opt/documenso/cert.p12 && \
-      chmod 644 /opt/documenso/cert.p12 && \
-      chown nodejs:nodejs /opt/documenso/cert.p12; \
+RUN set -e; \
+    if [ -f "./certs/cert.p12" ]; then \
+        echo "✅ Found certificate in ./certs/cert.p12"; \
+        cp ./certs/cert.p12 /opt/documenso/cert.p12 && \
+        chmod 644 /opt/documenso/cert.p12 && \
+        chown nodejs:nodejs /opt/documenso/cert.p12 && \
+        ls -lh /opt/documenso/cert.p12 && \
+        echo "✅ Certificate successfully copied to /opt/documenso/cert.p12"; \
+    else \
+        echo "⚠️  WARNING: Certificate not found in ./certs/cert.p12!"; \
+        echo "   Listing ./certs directory:"; \
+        ls -la ./certs/ 2>/dev/null || echo "   ./certs directory is empty or does not exist"; \
+        echo "   Document signing will fail until certificate is provided."; \
+        echo "   Place cert.p12 in apps/certs/ directory in your repository."; \
     fi
 
 USER nodejs

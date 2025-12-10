@@ -54,11 +54,20 @@ export const signWithLocalCert = async ({ pdf }: SignWithLocalCertOptions) => {
       certPath = env('NEXT_PRIVATE_SIGNING_LOCAL_FILE_PATH') || './example/cert.p12';
     }
 
+    console.log(`Attempting to read certificate from: ${certPath}`);
+    console.log(`NODE_ENV: ${env('NODE_ENV')}`);
+    console.log(`File exists: ${fs.existsSync(certPath)}`);
+
     try {
       cert = Buffer.from(fs.readFileSync(certPath));
-    } catch {
+      console.log(`Successfully read certificate file (${cert.length} bytes)`);
+    } catch (error) {
       console.error('Certificate error: Failed to read certificate file');
-      throw new Error('Document signing failed: Certificate file not accessible');
+      console.error(`Path attempted: ${certPath}`);
+      if (error instanceof Error) {
+        console.error(`Error: ${error.message}`);
+      }
+      throw new Error(`Document signing failed: Certificate file not accessible at ${certPath}`);
     }
   }
 

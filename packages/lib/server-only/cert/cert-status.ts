@@ -21,8 +21,20 @@ export const getCertificateStatus = () => {
 
     const stats = fs.statSync(filePath);
 
-    return { isAvailable: stats.size > 0 };
-  } catch {
+    const isAvailable = stats.size > 0;
+    
+    if (!isAvailable) {
+      console.error(`Certificate file found but is empty: ${filePath}`);
+    }
+    
+    return { isAvailable };
+  } catch (error) {
+    console.error(`Certificate not found at path: ${filePath}`);
+    console.error(`NODE_ENV: ${env('NODE_ENV')}`);
+    console.error(`NEXT_PRIVATE_SIGNING_LOCAL_FILE_PATH: ${env('NEXT_PRIVATE_SIGNING_LOCAL_FILE_PATH') || 'not set'}`);
+    if (error instanceof Error) {
+      console.error(`Error details: ${error.message}`);
+    }
     return { isAvailable: false };
   }
 };
