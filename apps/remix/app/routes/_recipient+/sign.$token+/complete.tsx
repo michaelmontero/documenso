@@ -274,24 +274,6 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
             )}
           </div>
         </div>
-
-        <div className="flex flex-col items-center">
-          {canSignUp && (
-            <div className="flex max-w-xl flex-col items-center justify-center p-4 md:p-12">
-              <h2 className="mt-8 text-center text-xl font-semibold md:mt-0">
-                <Trans>Need to sign documents?</Trans>
-              </h2>
-
-              <p className="mt-4 max-w-[55ch] text-center leading-normal text-muted-foreground/60">
-                <Trans>
-                  Create your account and start using state-of-the-art document signing.
-                </Trans>
-              </p>
-
-              <ClaimAccount defaultName={recipientName} defaultEmail={recipient.email} />
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
